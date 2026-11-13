@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{% block desktop %}
+{{ parts.reconciliation(problems) }}
+
+<h2>На ФФ</h2>
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th rowspan="2">Артикул</th>
+        <th rowspan="2">Товар</th>
+        {% for warehouse in overview.warehouses %}
+        <th colspan="3" class="group{{ ' deleted' if warehouse.deleted_at }}">{{ ff_label(warehouse) }}</th>
+        {% endfor %}
+      </tr>
+      <tr>
+        {% for warehouse in overview.warehouses %}{% for name in cells %}
+        <th class="num{{ ' group-start' if loop.first }}">{{ name }}</th>
+        {% endfor %}{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in overview.products %}
+      <tr data-row="{{ row.product.sku }}">
+        <td class="sku">{{ row.product.sku }}</td>
+        <td>{{ row.product.name }}</td>
+        {% for warehouse in overview.warehouses %}{{ parts.cell(row.cell(warehouse.id)) }}{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Вне ФФ</h2>
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Артикул</th>
+        <th>Товар</th>
+        {% for _, name in outside %}<th class="num">{{ name }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in overview.products %}
+      <tr data-row="{{ row.product.sku }} вне ФФ">
+        <td class="sku">{{ row.product.sku }}</td>
+        <td>{{ row.product.name }}</td>
+        {% for field, _ in outside %}{{ parts.num(row[field]) }}{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block mobile %}
+{{ parts.reconciliation(problems) }}
+
+{% for row in overview.products %}
+<section class="card">
+  <h2 class="card-title"><span class="sku">{{ row.product.sku }}</span> {{ row.product.name }}</h2>
+  <table class="m-grid">
+    <thead>
+      <tr><th>ФФ</th>{% for name in cells %}<th class="num">{{ name }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for warehouse in overview.warehouses %}
+      <tr data-row="{{ row.product.sku }} {{ warehouse.name }}">
+        <td class="{{ 'deleted' if warehouse.deleted_at }}">{{ ff_label(warehouse) }}</td>
+        {{ parts.cell(row.cell(warehouse.id)) }}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <table class="m-outside">
+    {% for field, name in outside %}
+    <tr data-row="{{ row.product.sku }} {{ name }}"><th>{{ name }}</th>{{ parts.num(row[field]) }}</tr>
+    {% endfor %}
+  </table>
+</section>
+{% endfor %}
+{% endblock %}

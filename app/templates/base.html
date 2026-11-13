@@ -1,0 +1,48 @@
+{% import "parts.html" as parts %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - CheckStock</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {# телефону своя раскладка, версию выбирает ширина экрана в style.css #}
+  <div class="desktop" data-version="desktop">
+    <header class="topbar">
+      <a class="brand" href="/">CheckStock</a>
+      <nav class="tabs">
+        {% for href, name in nav %}
+        <a href="{{ href }}"{% if href == url %} aria-current="page"{% endif %}>{{ name }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+    <main class="page">
+      <h1>{{ title }}</h1>
+      {{ parts.messages(notice, error, split, form, warehouses, url) }}
+      {% block desktop %}{% endblock %}
+    </main>
+  </div>
+
+  <div class="mobile" data-version="mobile">
+    <header class="m-bar">
+      <a class="brand" href="/">CheckStock</a>
+      <details class="m-menu">
+        <summary>Меню</summary>
+        <nav>
+          {% for href, name in nav %}
+          <a href="{{ href }}"{% if href == url %} aria-current="page"{% endif %}>{{ name }}</a>
+          {% endfor %}
+        </nav>
+      </details>
+    </header>
+    <main class="m-page">
+      <h1>{{ title }}</h1>
+      {{ parts.messages(notice, error, split, form, warehouses, url) }}
+      {% block mobile %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

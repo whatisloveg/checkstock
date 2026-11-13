@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{% macro fields() %}
+{{ parts.request_key(request_id) }}
+{{ parts.text("order_number", "Номер заказа", form, order_length, "WB-1001") }}
+{{ parts.select("product_id", "Товар", products, form) }}
+{{ parts.select("warehouse_id", "ФФ", warehouses, form) }}
+{{ parts.number("qty", "Количество", form) }}
+{% endmacro %}
+
+{% block desktop %}
+<section class="panel">
+  <h2>Новый резерв</h2>
+  <form method="post" action="/fbs" class="row-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Зарезервировать</button>
+  </form>
+</section>
+
+<h2>Ждут отправки</h2>
+{% if orders %}
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Заказ</th><th>Товар</th><th>ФФ</th><th class="num">Количество</th>
+        <th>Зарезервировано</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order, product in orders %}
+      <tr data-row="{{ order.id }}">
+        <td>{{ order.order_number }}</td>
+        <td><span class="sku">{{ product.sku }}</span> {{ product.name }}</td>
+        <td>{{ labels[order.warehouse_id] }}</td>
+        <td class="num">{{ order.qty }}</td>
+        <td>{{ when(order.created_at) }}</td>
+        <td class="actions">
+          {{ parts.action("/fbs/%d/ship"|format(order.id), "Отправить") }}
+          {{ parts.action("/fbs/%d/cancel"|format(order.id), "Отменить", "quiet") }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Зарезервированных заказов нет</p>
+{% endif %}
+{% endblock %}
+
+{% block mobile %}
+<h2>Ждут отправки</h2>
+{% for order, product in orders %}
+<article class="card">
+  <div class="card-title">Заказ {{ order.order_number }}<span class="qty">{{ order.qty }} шт.</span></div>
+  <dl class="facts">
+    <dt>Товар</dt><dd><span class="sku">{{ product.sku }}</span> {{ product.name }}</dd>
+    <dt>ФФ</dt><dd>{{ labels[order.warehouse_id] }}</dd>
+    <dt>Резерв с</dt><dd>{{ when(order.created_at) }}</dd>
+  </dl>
+  <div class="m-actions">
+    {{ parts.action("/fbs/%d/cancel"|format(order.id), "Отменить", "quiet") }}
+    {{ parts.action("/fbs/%d/ship"|format(order.id), "Отправить", "primary") }}
+  </div>
+</article>
+{% else %}
+<p class="empty">Зарезервированных заказов нет</p>
+{% endfor %}
+
+<details class="card m-new"{{ " open" if error or not orders }}>
+  <summary>Новый резерв</summary>
+  <form method="post" action="/fbs" class="m-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Зарезервировать</button>
+  </form>
+</details>
+{% endblock %}

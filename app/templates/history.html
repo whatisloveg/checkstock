@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block desktop %}
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Время</th><th>Операция</th><th>Товар</th><th class="num">Количество</th>
+        <th>Откуда</th><th>Куда</th><th>Документ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr data-row="{{ entry.id }}">
+        <td class="muted">{{ entry.time }}</td>
+        <td>{{ entry.kind }}</td>
+        <td>{{ entry.product }}</td>
+        <td class="num">{{ entry.qty }}</td>
+        <td>{{ entry.source }}</td>
+        <td>{{ entry.target }}</td>
+        <td>{{ entry.document }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block mobile %}
+{% for entry in entries %}
+<article class="card">
+  <div class="card-title">{{ entry.kind }}<span class="qty">{{ entry.qty }} шт.</span></div>
+  <dl class="facts">
+    <dt>Товар</dt><dd>{{ entry.product }}</dd>
+    <dt>Откуда</dt><dd>{{ entry.source }}</dd>
+    <dt>Куда</dt><dd>{{ entry.target }}</dd>
+    {% if entry.document %}<dt>Документ</dt><dd>{{ entry.document }}</dd>{% endif %}
+  </dl>
+  <p class="muted small">{{ entry.time }}</p>
+</article>
+{% endfor %}
+{% endblock %}

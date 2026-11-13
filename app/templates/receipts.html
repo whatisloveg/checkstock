@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{% macro fields() %}
+{{ parts.request_key(request_id) }}
+{{ parts.select("product_id", "Товар", products, form) }}
+{{ parts.select("warehouse_id", "ФФ", warehouses, form) }}
+{{ parts.number("qty", "Количество", form) }}
+{% endmacro %}
+
+{% block desktop %}
+<section class="panel">
+  <form method="post" action="/receipts" class="row-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Оформить приход</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block mobile %}
+<form method="post" action="/receipts" class="m-form card" autocomplete="off">
+  {{ fields() }}
+  <button class="button primary">Оформить приход</button>
+</form>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{% macro fields() %}
+{{ parts.request_key(request_id) }}
+{{ parts.select("product_id", "Товар", products, form) }}
+{{ parts.select("warehouse_id", "С какого ФФ", warehouses, form) }}
+{{ parts.number("qty", "Количество", form) }}
+{% endmacro %}
+
+{% block desktop %}
+<section class="panel">
+  <h2>Отгрузить на склад маркетплейса</h2>
+  <form method="post" action="/fbo" class="row-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Отгрузить</button>
+  </form>
+</section>
+
+<h2>В пути на склад маркетплейса</h2>
+{% if shipments %}
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Поставка</th><th>Товар</th><th>С какого ФФ</th><th class="num">Количество</th>
+        <th>Отгружено</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for shipment, product in shipments %}
+      <tr data-row="{{ shipment.id }}">
+        <td>{{ shipment.id }}</td>
+        <td><span class="sku">{{ product.sku }}</span> {{ product.name }}</td>
+        <td>{{ labels[shipment.warehouse_id] }}</td>
+        <td class="num">{{ shipment.qty }}</td>
+        <td>{{ when(shipment.created_at) }}</td>
+        <td class="actions">{{ parts.action("/fbo/%d/accept"|format(shipment.id), "Отметить приемку") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Поставок в пути нет</p>
+{% endif %}
+{% endblock %}
+
+{% block mobile %}
+<h2>В пути на склад маркетплейса</h2>
+{% for shipment, product in shipments %}
+<article class="card">
+  <div class="card-title"><span class="sku">{{ product.sku }}</span> {{ product.name }}<span class="qty">{{ shipment.qty }} шт.</span></div>
+  <dl class="facts">
+    <dt>С какого ФФ</dt><dd>{{ labels[shipment.warehouse_id] }}</dd>
+    <dt>Отгружено</dt><dd>{{ when(shipment.created_at) }}, поставка {{ shipment.id }}</dd>
+  </dl>
+  {{ parts.action("/fbo/%d/accept"|format(shipment.id), "Отметить приемку", "primary") }}
+</article>
+{% else %}
+<p class="empty">Поставок в пути нет</p>
+{% endfor %}
+
+<details class="card m-new"{{ " open" if error or not shipments }}>
+  <summary>Отгрузить на склад маркетплейса</summary>
+  <form method="post" action="/fbo" class="m-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Отгрузить</button>
+  </form>
+</details>
+{% endblock %}

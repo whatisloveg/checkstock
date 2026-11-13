@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{# после ошибки введенное название остается только в той форме, которую отправили #}
+{% set failed = request.url.path if error else "" %}
+
+{% macro add_form(css) %}
+<form method="post" action="/warehouses" class="{{ css }}" autocomplete="off">
+  {{ parts.request_key(request_id) }}
+  {{ parts.text("name", "Название", form if failed == "/warehouses" else {}, name_length, "Восток") }}
+  <button class="button primary">Добавить</button>
+</form>
+{% endmacro %}
+
+{% macro entered_name(warehouse) %}{{ form.get("name") if failed == "/warehouses/%d/rename"|format(warehouse.id) else warehouse.name }}{% endmacro %}
+
+{% macro deleted_table(css) %}
+<h2>Удаленные</h2>
+{% if deleted %}
+<table class="{{ css }}">
+  <thead><tr><th>ФФ</th><th>Что на нем числится</th></tr></thead>
+  <tbody>
+    {% for warehouse, holding in deleted %}
+    <tr data-row="{{ warehouse.name }}"><td>{{ warehouse.name }}</td><td>{{ holding or "товара нет" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Удаленных ФФ нет</p>
+{% endif %}
+{% endmacro %}
+
+{% block desktop %}
+<section class="panel">
+  <h2>Добавить ФФ</h2>
+  {{ add_form("row-form") }}
+</section>
+
+<h2>Действующие</h2>
+<div class="table-wrap">
+  <table class="grid">
+    <tbody>
+      {% for warehouse in active %}
+      <tr>
+        <td>
+          <form method="post" action="/warehouses/{{ warehouse.id }}/rename" class="rename" autocomplete="off">
+            <input type="text" name="name" value="{{ entered_name(warehouse) }}" required maxlength="{{ name_length }}" aria-label="Название ФФ">
+            <button class="button">Переименовать</button>
+          </form>
+        </td>
+        <td class="actions">{{ parts.delete_warehouse(warehouse) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ deleted_table("grid") }}
+{% endblock %}
+
+{% block mobile %}
+<h2>Действующие</h2>
+{% for warehouse in active %}
+<article class="card">
+  <form method="post" action="/warehouses/{{ warehouse.id }}/rename" class="m-form" autocomplete="off">
+    <label class="field"><span>Название</span>
+      <input type="text" name="name" value="{{ entered_name(warehouse) }}" required maxlength="{{ name_length }}">
+    </label>
+    <button class="button">Переименовать</button>
+  </form>
+  {{ parts.delete_warehouse(warehouse) }}
+</article>
+{% endfor %}
+
+<details class="card m-new"{{ " open" if error }}>
+  <summary>Добавить ФФ</summary>
+  {{ add_form("m-form") }}
+</details>
+
+{{ deleted_table("m-grid") }}
+{% endblock %}

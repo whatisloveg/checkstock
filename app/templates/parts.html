@@ -1,0 +1,76 @@
+{# общие части обеих версий: тексты и поля форм одинаковые, разная только раскладка #}
+
+{% macro messages(notice, error, split, form, warehouses, url) %}
+{% if notice %}<p class="alert notice" role="status">{{ notice }}</p>{% endif %}
+{% if error %}
+<div class="alert error" role="alert">
+  <p>{{ error }}</p>
+  {% if split %}{{ split_offer(split, form, warehouses, url) }}{% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro split_offer(split, form, warehouses, url) %}
+{% set names = dict(warehouses) %}
+<form method="post" action="{{ url }}" class="split">
+  {% for name, value in form.multi_items() if name not in ["warehouse_id", "qty"] %}
+  <input type="hidden" name="{{ name }}" value="{{ value }}">
+  {% endfor %}
+  {% for part in split %}
+  <input type="hidden" name="warehouse_id" value="{{ part.warehouse_id }}">
+  <input type="hidden" name="qty" value="{{ part.qty }}">
+  {% endfor %}
+  <button class="button primary">{{ "Разделить" if split|length > 1 else "Взять с другого ФФ" }}: {% for part in split %}{{ names[part.warehouse_id] }} {{ part.qty }}{{ " + " if not loop.last }}{% endfor %}</button>
+</form>
+{% endmacro %}
+
+{% macro reconciliation(problems) %}
+{% if problems %}
+<div class="alert error" role="alert">
+  <p>Остатки расходятся с историей операций:</p>
+  <ul>{% for problem in problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+</div>
+{% else %}
+<p class="alert ok">Остатки сходятся с историей операций</p>
+{% endif %}
+{% endmacro %}
+
+{% macro num(value) %}<td class="num{{ ' zero' if not value }}">{{ value }}</td>{% endmacro %}
+
+{% macro cell(cell) %}{{ num(cell.on_hand) }}<td class="num available{{ ' zero' if not cell.available }}">{{ cell.available }}</td>{{ num(cell.reserved) }}{% endmacro %}
+
+{% macro select(name, label, items, form, default=none) %}
+{% set chosen = form.get(name) or default|string %}
+<label class="field"><span>{{ label }}</span>
+  <select name="{{ name }}" required>
+    {% for value, text in items %}
+    <option value="{{ value }}"{{ " selected" if value|string == chosen }}>{{ text }}</option>
+    {% endfor %}
+  </select>
+</label>
+{% endmacro %}
+
+{% macro number(name, label, form) %}
+<label class="field field-short"><span>{{ label }}</span>
+  <input type="number" name="{{ name }}" min="1" max="{{ max_qty }}" step="1" inputmode="numeric" required value="{{ form.get(name, '') }}">
+</label>
+{% endmacro %}
+
+{% macro text(name, label, form, maxlength, placeholder="") %}
+<label class="field"><span>{{ label }}</span>
+  <input type="text" name="{{ name }}" required maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" value="{{ form.get(name, '') }}">
+</label>
+{% endmacro %}
+
+{% macro request_key(request_id) %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endmacro %}
+
+{% macro action(url, label, kind="") %}
+<form method="post" action="{{ url }}"><button class="button {{ kind }}">{{ label }}</button></form>
+{% endmacro %}
+
+{% macro delete_warehouse(warehouse) %}
+<form method="post" action="/warehouses/{{ warehouse.id }}/delete"
+      onsubmit='return confirm({{ ("Удалить ФФ " ~ warehouse.name ~ "? Остатки и история сохранятся")|tojson }})'>
+  <button class="button danger">Удалить</button>
+</form>
+{% endmacro %}

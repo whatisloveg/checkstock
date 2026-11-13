@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% import "parts.html" as parts %}
+
+{% macro fields() %}
+{{ parts.request_key(request_id) }}
+{{ parts.select("product_id", "Товар", products, form) }}
+{{ parts.select("from_warehouse_id", "Откуда", sources, form) }}
+{# по умолчанию товар едет на другой ФФ, а не на тот же #}
+{{ parts.select("to_warehouse_id", "Куда", warehouses, form, warehouses[1][0] if warehouses|length > 1) }}
+{{ parts.number("qty", "Количество", form) }}
+{% endmacro %}
+
+{% block desktop %}
+<section class="panel">
+  <h2>Отправить на другой ФФ</h2>
+  <form method="post" action="/transfers" class="row-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Отправить</button>
+  </form>
+</section>
+
+<h2>В пути</h2>
+{% if transfers %}
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Номер</th><th>Товар</th><th class="num">Количество</th>
+        <th>Откуда</th><th>Куда</th><th>Отправлено</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for transfer, product in transfers %}
+      <tr data-row="{{ transfer.id }}">
+        <td>{{ transfer.id }}</td>
+        <td><span class="sku">{{ product.sku }}</span> {{ product.name }}</td>
+        <td class="num">{{ transfer.qty }}</td>
+        <td>{{ labels[transfer.from_warehouse_id] }}</td>
+        <td>{{ labels[transfer.to_warehouse_id] }}</td>
+        <td>{{ when(transfer.created_at) }}</td>
+        <td class="actions">{{ parts.action("/transfers/%d/receive"|format(transfer.id), "Принять") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Товара в пути нет</p>
+{% endif %}
+{% endblock %}
+
+{% block mobile %}
+<h2>В пути</h2>
+{% for transfer, product in transfers %}
+<article class="card">
+  <div class="card-title"><span class="sku">{{ product.sku }}</span> {{ product.name }}<span class="qty">{{ transfer.qty }} шт.</span></div>
+  <dl class="facts">
+    <dt>Откуда</dt><dd>{{ labels[transfer.from_warehouse_id] }}</dd>
+    <dt>Куда</dt><dd>{{ labels[transfer.to_warehouse_id] }}</dd>
+    <dt>Отправлено</dt><dd>{{ when(transfer.created_at) }}, перемещение {{ transfer.id }}</dd>
+  </dl>
+  {{ parts.action("/transfers/%d/receive"|format(transfer.id), "Принять", "primary") }}
+</article>
+{% else %}
+<p class="empty">Товара в пути нет</p>
+{% endfor %}
+
+<details class="card m-new"{{ " open" if error or not transfers }}>
+  <summary>Отправить на другой ФФ</summary>
+  <form method="post" action="/transfers" class="m-form" autocomplete="off">
+    {{ fields() }}
+    <button class="button primary">Отправить</button>
+  </form>
+</details>
+{% endblock %}
